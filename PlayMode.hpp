@@ -25,6 +25,15 @@ struct PlayMode : Mode {
 		uint8_t pressed = 0;
 	} left, right, down, up;
 
+	struct Note {
+		uint8_t note = 0;
+		//0 = lowC, 1 = midE, 2 = midG, 3 = highC
+		bool done = false;
+		bool correct = false;
+	};
+
+	std::array<Note, 4> song;
+
 	//local copy of the game scene (so code can change it during gameplay):
 	Scene scene;
 
@@ -41,6 +50,22 @@ struct PlayMode : Mode {
 
 	//music coming from the tip of the leg (as a demonstration):
 	std::shared_ptr< Sound::PlayingSample > leg_tip_loop;
+	std::shared_ptr< Sound::PlayingSample > low_c;
+	std::shared_ptr< Sound::PlayingSample > high_c;
+	std::shared_ptr< Sound::PlayingSample > mid_e;
+	std::shared_ptr< Sound::PlayingSample > mid_g;
+	std::shared_ptr< Sound::PlayingSample > low_c_c;
+	std::shared_ptr< Sound::PlayingSample > high_c_c;
+	std::shared_ptr< Sound::PlayingSample > mid_e_c;
+	std::shared_ptr< Sound::PlayingSample > mid_g_c;
+	std::shared_ptr< Sound::PlayingSample > wrong;
+	std::shared_ptr< Sound::PlayingSample > correct;
+
+
+
+	bool playing = true;
+	bool completed = false;
+	float note_elapsed = 0.0f;
 	
 	//camera:
 	Scene::Camera *camera = nullptr;
