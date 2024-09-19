@@ -14,7 +14,7 @@ Screen Shot:
 How To Play:
 
 Hit WASD to play the correct notes!
-Copy the carrot's four note sequence in the correct order. you will get audio feedback as to if you did something wrong, and your score will go up if you got it correct!
+Copy the carrot's random four note sequence in the correct order. you will get audio feedback as to if you did something wrong, and your score will go up if you got it correct!
 Hit space if you need to hear the carrot sing the current sequence again.
 Note: getting a note wrong or pressing space will reset the note sequence you are playing: so make sure to start over!
 
