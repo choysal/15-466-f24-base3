@@ -2,7 +2,7 @@
 
 Author: Charvi Hoysal (choysal)
 
-Design: The carrot will sing 4 notes: hit the right notes to immitate him in the right order! Try to get as high of a score as possible!
+Design: The carrot will sing 4 notes: the bunny has to hit the right notes to immitate him in the right order! Try to get as high of a score as possible!
 
 Credits: 
 Music and all sounds authored by me using beepbox.co
