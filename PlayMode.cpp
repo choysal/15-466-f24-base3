@@ -16,13 +16,13 @@
 
 GLuint hexapod_meshes_for_lit_color_texture_program = 0;
 Load< MeshBuffer > hexapod_meshes(LoadTagDefault, []() -> MeshBuffer const * {
-	MeshBuffer const *ret = new MeshBuffer(data_path("hexapod.pnct"));
+	MeshBuffer const *ret = new MeshBuffer(data_path("everything.pnct"));
 	hexapod_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
 	return ret;
 });
 
 Load< Scene > hexapod_scene(LoadTagDefault, []() -> Scene const * {
-	return new Scene(data_path("hexapod.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
+	return new Scene(data_path("everything.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
 		Mesh const &mesh = hexapod_meshes->lookup(mesh_name);
 
 		scene.drawables.emplace_back(transform);
@@ -91,18 +91,18 @@ Load< Sound::Sample > mid_g_choir_sample(LoadTagDefault, []() -> Sound::Sample c
 
 PlayMode::PlayMode() : scene(*hexapod_scene) {
 	//get pointers to leg for convenience:
-	for (auto &transform : scene.transforms) {
-		if (transform.name == "Hip.FL") hip = &transform;
-		else if (transform.name == "UpperLeg.FL") upper_leg = &transform;
-		else if (transform.name == "LowerLeg.FL") lower_leg = &transform;
-	}
-	if (hip == nullptr) throw std::runtime_error("Hip not found.");
-	if (upper_leg == nullptr) throw std::runtime_error("Upper leg not found.");
-	if (lower_leg == nullptr) throw std::runtime_error("Lower leg not found.");
+	// for (auto &transform : scene.transforms) {
+	// 	if (transform.name == "Hip.FL") hip = &transform;
+	// 	else if (transform.name == "UpperLeg.FL") upper_leg = &transform;
+	// 	else if (transform.name == "LowerLeg.FL") lower_leg = &transform;
+	// }
+	// if (hip == nullptr) throw std::runtime_error("Hip not found.");
+	// if (upper_leg == nullptr) throw std::runtime_error("Upper leg not found.");
+	// if (lower_leg == nullptr) throw std::runtime_error("Lower leg not found.");
 
-	hip_base_rotation = hip->rotation;
-	upper_leg_base_rotation = upper_leg->rotation;
-	lower_leg_base_rotation = lower_leg->rotation;
+	// hip_base_rotation = hip->rotation;
+	// upper_leg_base_rotation = upper_leg->rotation;
+	// lower_leg_base_rotation = lower_leg->rotation;
 
 	//get pointer to camera for convenience:
 	if (scene.cameras.size() != 1) throw std::runtime_error("Expecting scene to have exactly one camera, but it has " + std::to_string(scene.cameras.size()));
@@ -118,19 +118,19 @@ PlayMode::PlayMode() : scene(*hexapod_scene) {
 
 	//start music loop playing:
 	// (note: position will be over-ridden in update())
-	leg_tip_loop = Sound::loop_3D(*dusty_floor_sample, 1.0f, get_leg_tip_position(), 10.0f);
-	leg_tip_loop.get()->stop();
+	// leg_tip_loop = Sound::loop_3D(*dusty_floor_sample, 1.0f, get_leg_tip_position(), 10.0f);
+	// leg_tip_loop.get()->stop();
 
-	low_c = Sound::loop_3D(*low_c_sample, 1.0f, get_leg_tip_position(), 10.0f);
+	low_c = Sound::loop(*low_c_sample, 1.0f);
 	low_c.get()->stop();
 
-	high_c = Sound::loop_3D(*high_c_sample, 1.0f, get_leg_tip_position(), 10.0f);
+	high_c = Sound::loop(*high_c_sample, 1.0f);
 	high_c.get()->stop();
 
-	mid_e = Sound::loop_3D(*mid_e_sample, 1.0f, get_leg_tip_position(), 10.0f);
+	mid_e = Sound::loop(*mid_e_sample, 1.0f);
 	mid_e.get()->stop();
 
-	mid_g = Sound::loop_3D(*mid_g_sample, 1.0f, get_leg_tip_position(), 10.0f);
+	mid_g = Sound::loop(*mid_g_sample, 1.0f);
 	mid_g.get()->stop();
 
 }
@@ -175,53 +175,54 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			down.pressed = false;
 			return true;
 		}
-	} else if (evt.type == SDL_MOUSEBUTTONDOWN) {
-		if (SDL_GetRelativeMouseMode() == SDL_FALSE) {
-			SDL_SetRelativeMouseMode(SDL_TRUE);
-			return true;
-		}
-	} else if (evt.type == SDL_MOUSEMOTION) {
-		if (SDL_GetRelativeMouseMode() == SDL_TRUE) {
-			glm::vec2 motion = glm::vec2(
-				evt.motion.xrel / float(window_size.y),
-				-evt.motion.yrel / float(window_size.y)
-			);
-			camera->transform->rotation = glm::normalize(
-				camera->transform->rotation
-				* glm::angleAxis(-motion.x * camera->fovy, glm::vec3(0.0f, 1.0f, 0.0f))
-				* glm::angleAxis(motion.y * camera->fovy, glm::vec3(1.0f, 0.0f, 0.0f))
-			);
-			return true;
-		}
 	}
+	// } else if (evt.type == SDL_MOUSEBUTTONDOWN) {
+	// 	if (SDL_GetRelativeMouseMode() == SDL_FALSE) {
+	// 		SDL_SetRelativeMouseMode(SDL_TRUE);
+	// 		return true;
+	// 	}
+	// } else if (evt.type == SDL_MOUSEMOTION) {
+	// 	if (SDL_GetRelativeMouseMode() == SDL_TRUE) {
+	// 		glm::vec2 motion = glm::vec2(
+	// 			evt.motion.xrel / float(window_size.y),
+	// 			-evt.motion.yrel / float(window_size.y)
+	// 		);
+	// 		camera->transform->rotation = glm::normalize(
+	// 			camera->transform->rotation
+	// 			* glm::angleAxis(-motion.x * camera->fovy, glm::vec3(0.0f, 1.0f, 0.0f))
+	// 			* glm::angleAxis(motion.y * camera->fovy, glm::vec3(1.0f, 0.0f, 0.0f))
+	// 		);
+	// 		return true;
+	// 	}
+	// }
 
 	return false;
 }
 
 void PlayMode::update(float elapsed) {
 
-	//slowly rotates through [0,1):
-	wobble += elapsed / 10.0f;
-	wobble -= std::floor(wobble);
+	// //slowly rotates through [0,1):
+	// wobble += elapsed / 10.0f;
+	// wobble -= std::floor(wobble);
 
-	hip->rotation = hip_base_rotation * glm::angleAxis(
-		glm::radians(5.0f * std::sin(wobble * 2.0f * float(M_PI))),
-		glm::vec3(0.0f, 1.0f, 0.0f)
-	);
-	upper_leg->rotation = upper_leg_base_rotation * glm::angleAxis(
-		glm::radians(7.0f * std::sin(wobble * 2.0f * 2.0f * float(M_PI))),
-		glm::vec3(0.0f, 0.0f, 1.0f)
-	);
-	lower_leg->rotation = lower_leg_base_rotation * glm::angleAxis(
-		glm::radians(10.0f * std::sin(wobble * 3.0f * 2.0f * float(M_PI))),
-		glm::vec3(0.0f, 0.0f, 1.0f)
-	);
+	// hip->rotation = hip_base_rotation * glm::angleAxis(
+	// 	glm::radians(5.0f * std::sin(wobble * 2.0f * float(M_PI))),
+	// 	glm::vec3(0.0f, 1.0f, 0.0f)
+	// );
+	// upper_leg->rotation = upper_leg_base_rotation * glm::angleAxis(
+	// 	glm::radians(7.0f * std::sin(wobble * 2.0f * 2.0f * float(M_PI))),
+	// 	glm::vec3(0.0f, 0.0f, 1.0f)
+	// );
+	// lower_leg->rotation = lower_leg_base_rotation * glm::angleAxis(
+	// 	glm::radians(10.0f * std::sin(wobble * 3.0f * 2.0f * float(M_PI))),
+	// 	glm::vec3(0.0f, 0.0f, 1.0f)
+	// );
 
-	//move sound to follow leg tip position:
-	low_c->set_position(get_leg_tip_position(), 1.0f / 60.0f);
-	high_c->set_position(get_leg_tip_position(), 1.0f / 60.0f);
-	mid_e->set_position(get_leg_tip_position(), 1.0f / 60.0f);
-	mid_g->set_position(get_leg_tip_position(), 1.0f / 60.0f);
+	// //move sound to follow leg tip position:
+	// low_c->set_position(get_leg_tip_position(), 1.0f / 60.0f);
+	// high_c->set_position(get_leg_tip_position(), 1.0f / 60.0f);
+	// mid_e->set_position(get_leg_tip_position(), 1.0f / 60.0f);
+	// mid_g->set_position(get_leg_tip_position(), 1.0f / 60.0f);
 
 	
 
@@ -239,7 +240,7 @@ void PlayMode::update(float elapsed) {
 			mid_g.get()->stop();
 			high_c.get()->stop();
 			// move.x =-1.0f;
-			mid_e = Sound::play_3D(*mid_e_sample, 1.0f, get_leg_tip_position(), 10.0f);
+			mid_e = Sound::play(*mid_e_sample, 1.0f);
 			player_note = 1;
 			//CHECK CORRECT NOTE
 			size_t note_count = 0;
@@ -252,7 +253,7 @@ void PlayMode::update(float elapsed) {
 						match = true; //exit out of check loop	
 					} else {
 						wrong_sequence = true; //exit loop
-						wrong = Sound::play_3D(*wrong_sample, 1.0f, get_leg_tip_position(), 10.0f);
+						wrong = Sound::play(*wrong_sample, 1.0f);
 					}
 
 				}
@@ -265,7 +266,7 @@ void PlayMode::update(float elapsed) {
 			mid_e.get()->stop();
 			high_c.get()->stop();
 			// move.x = 1.0f;
-			mid_g = Sound::play_3D(*mid_g_sample, 1.0f, get_leg_tip_position(), 10.0f);
+			mid_g = Sound::play(*mid_g_sample, 1.0f);
 			player_note = 2;
 			//CHECK CORRECT NOTE
 			size_t note_count = 0;
@@ -278,7 +279,7 @@ void PlayMode::update(float elapsed) {
 						match = true; //exit out of check loop	
 					} else {
 						wrong_sequence = true; //exit loop
-						wrong = Sound::play_3D(*wrong_sample, 1.0f, get_leg_tip_position(), 10.0f);
+						wrong = Sound::play(*wrong_sample, 1.0f);
 					}
 
 				}
@@ -292,7 +293,7 @@ void PlayMode::update(float elapsed) {
 			mid_e.get()->stop();
 			high_c.get()->stop();
 			// move.y =-1.0f;
-			low_c = Sound::play_3D(*low_c_sample, 1.0f, get_leg_tip_position(), 10.0f);
+			low_c = Sound::play(*low_c_sample, 1.0f);
 			player_note = 0;
 			//CHECK CORRECT NOTE
 			size_t note_count = 0;
@@ -307,7 +308,7 @@ void PlayMode::update(float elapsed) {
 						match = true; //exit out of check loop	
 					} else {
 						wrong_sequence = true; //exit loop
-						wrong = Sound::play_3D(*wrong_sample, 1.0f, get_leg_tip_position(), 10.0f);
+						wrong = Sound::play(*wrong_sample, 1.0f);
 					}
 
 				}
@@ -321,7 +322,7 @@ void PlayMode::update(float elapsed) {
 			mid_e.get()->stop();
 			mid_g.get()->stop();
 			// move.y = 1.0f;
-			high_c = Sound::play_3D(*high_c_sample, 1.0f, get_leg_tip_position(), 10.0f);
+			high_c = Sound::play(*high_c_sample, 1.0f);
 			player_note = 3;
 			//CHECK CORRECT NOTE
 			size_t note_count = 0;
@@ -334,7 +335,7 @@ void PlayMode::update(float elapsed) {
 						match = true; //exit out of check loop	
 					} else {
 						wrong_sequence = true; //exit loop
-						wrong = Sound::play_3D(*wrong_sample, 1.0f, get_leg_tip_position(), 10.0f);
+						wrong = Sound::play(*wrong_sample, 1.0f);
 					}
 
 				}
@@ -358,7 +359,7 @@ void PlayMode::update(float elapsed) {
 		}
 		
 		if(all_done){
-			correct = Sound::play_3D(*correct_sample, 1.0f, get_leg_tip_position(), 10.0f);
+			correct = Sound::play(*correct_sample, 1.0f);
 			score+=1;
 			for (uint32_t x = 0; x < 4; ++x) {
 				uint8_t rand_note = rand()%4;
@@ -381,13 +382,13 @@ void PlayMode::update(float elapsed) {
 						if(!song[i].done){
 							uint8_t current_note = song[i].note;
 							if(current_note == 0){
-								low_c_c = Sound::play_3D(*low_c_choir_sample, 1.0f, get_leg_tip_position(), 10.0f);
+								low_c_c = Sound::play(*low_c_choir_sample, 1.0f);
 							} else if(current_note ==1){
-								mid_e_c = Sound::play_3D(*mid_e_choir_sample, 1.0f, get_leg_tip_position(), 10.0f);
+								mid_e_c = Sound::play(*mid_e_choir_sample, 1.0f);
 							} else if(current_note==2){
-								mid_g_c = Sound::play_3D(*mid_g_choir_sample, 1.0f, get_leg_tip_position(), 10.0f);
+								mid_g_c = Sound::play(*mid_g_choir_sample, 1.0f);
 							}else{
-								high_c_c = Sound::play_3D(*high_c_choir_sample, 1.0f, get_leg_tip_position(), 10.0f);
+								high_c_c = Sound::play(*high_c_choir_sample, 1.0f);
 							}
 							song[i].done = true;
 							note_played = true;
@@ -417,24 +418,6 @@ void PlayMode::update(float elapsed) {
 
 		camera->transform->position += move.x * frame_right + move.y * frame_forward;
 	}
-
-	// if (leg_tip_loop)
-	// {
-	// 	{ //update listener to camera position:
-	// 	glm::mat4x3 frame = camera->transform->make_local_to_parent();
-	// 	glm::vec3 frame_right = frame[0];
-	// 	glm::vec3 frame_at = frame[3];
-	// 	Sound::listener.set_position_right(frame_at, frame_right, 1.0f / 60.0f);
-	// 	}
-	// }
-	
-
-	// { //update listener to camera position:
-	// 	glm::mat4x3 frame = camera->transform->make_local_to_parent();
-	// 	glm::vec3 frame_right = frame[0];
-	// 	glm::vec3 frame_at = frame[3];
-	// 	Sound::listener.set_position_right(frame_at, frame_right, 1.0f / 60.0f);
-	// }
 
 	//reset button press counters:
 	left.downs = 0;
@@ -475,7 +458,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		));
 
 		constexpr float H = 0.09f;
-		lines.draw_text("Mouse motion rotates camera; WASD moves; escape ungrabs mouse",
+		lines.draw_text("Mouse motion rotates camera; WASD moves; escape ungrabs mouse %s",
 			glm::vec3(-aspect + 0.1f * H, -1.0 + 0.1f * H, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0x00, 0x00, 0x00, 0x00));
