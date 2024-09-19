@@ -45,6 +45,7 @@ struct PlayMode : Mode {
 	glm::quat upper_leg_base_rotation;
 	glm::quat lower_leg_base_rotation;
 	float wobble = 0.0f;
+	uint8_t score = 0;
 
 	glm::vec3 get_leg_tip_position();
 

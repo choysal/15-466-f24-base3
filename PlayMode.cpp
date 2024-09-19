@@ -48,7 +48,7 @@ Load< Sound::Sample > wrong_sample(LoadTagDefault, []() -> Sound::Sample const *
 });
 
 Load< Sound::Sample > correct_sample(LoadTagDefault, []() -> Sound::Sample const * {
-	return new Sound::Sample(data_path("correct.wav"));
+	return new Sound::Sample(data_path("correctreal.wav"));
 });
 
 //player samples
@@ -359,9 +359,14 @@ void PlayMode::update(float elapsed) {
 		
 		if(all_done){
 			correct = Sound::play_3D(*correct_sample, 1.0f, get_leg_tip_position(), 10.0f);
+			score+=1;
 			for (uint32_t x = 0; x < 4; ++x) {
-				song[x] = Note{1,false}; //just populate with default note TODOFORME
+				uint8_t rand_note = rand()%4;
+				song[x] = Note{rand_note,false,false}; //just populate with default note TODOFORME
 			}
+			all_done = false;
+			playing = true; //start again playing it
+			
 		}
 		
 
@@ -369,7 +374,7 @@ void PlayMode::update(float elapsed) {
 		if(playing){
 			//update note_elapsed
 			note_elapsed+=elapsed;
-			if(note_elapsed>2.0f){
+			if(note_elapsed>1.0f){
 				bool note_played = false;
 				for ( size_t i = 0; i < 4; i++){
 					if(!note_played){
