@@ -16,13 +16,13 @@
 
 GLuint hexapod_meshes_for_lit_color_texture_program = 0;
 Load< MeshBuffer > hexapod_meshes(LoadTagDefault, []() -> MeshBuffer const * {
-	MeshBuffer const *ret = new MeshBuffer(data_path("everything.pnct"));
+	MeshBuffer const *ret = new MeshBuffer(data_path("final.pnct"));
 	hexapod_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
 	return ret;
 });
 
 Load< Scene > hexapod_scene(LoadTagDefault, []() -> Scene const * {
-	return new Scene(data_path("everything.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
+	return new Scene(data_path("final.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
 		Mesh const &mesh = hexapod_meshes->lookup(mesh_name);
 
 		scene.drawables.emplace_back(transform);
@@ -38,13 +38,9 @@ Load< Scene > hexapod_scene(LoadTagDefault, []() -> Scene const * {
 	});
 });
 
-Load< Sound::Sample > dusty_floor_sample(LoadTagDefault, []() -> Sound::Sample const * {
-	return new Sound::Sample(data_path("C.wav"));
-});
-
 // noise samples
 Load< Sound::Sample > wrong_sample(LoadTagDefault, []() -> Sound::Sample const * {
-	return new Sound::Sample(data_path("wrong.wav"));
+	return new Sound::Sample(data_path("wrongrealreal.wav"));
 });
 
 Load< Sound::Sample > correct_sample(LoadTagDefault, []() -> Sound::Sample const * {
@@ -90,36 +86,22 @@ Load< Sound::Sample > mid_g_choir_sample(LoadTagDefault, []() -> Sound::Sample c
 
 
 PlayMode::PlayMode() : scene(*hexapod_scene) {
-	//get pointers to leg for convenience:
-	// for (auto &transform : scene.transforms) {
-	// 	if (transform.name == "Hip.FL") hip = &transform;
-	// 	else if (transform.name == "UpperLeg.FL") upper_leg = &transform;
-	// 	else if (transform.name == "LowerLeg.FL") lower_leg = &transform;
-	// }
-	// if (hip == nullptr) throw std::runtime_error("Hip not found.");
-	// if (upper_leg == nullptr) throw std::runtime_error("Upper leg not found.");
-	// if (lower_leg == nullptr) throw std::runtime_error("Lower leg not found.");
+	//get pointers to objects for convenience:
+	for (auto &transform : scene.transforms) {
+		if (transform.name == "Cube.001") bunny = &transform;
+		else if (transform.name == "Cube") carrot = &transform;
+	}
 
-	// hip_base_rotation = hip->rotation;
-	// upper_leg_base_rotation = upper_leg->rotation;
-	// lower_leg_base_rotation = lower_leg->rotation;
+	bunny_base_rotation = bunny->rotation;
+	carrot_base_rotation = bunny->rotation;
+
 
 	//get pointer to camera for convenience:
 	if (scene.cameras.size() != 1) throw std::runtime_error("Expecting scene to have exactly one camera, but it has " + std::to_string(scene.cameras.size()));
 	camera = &scene.cameras.front();
 
-	//inits song
-	// for (uint32_t x = 0; x < 4; ++x) {
-	// 	song[x] = Note{0,false}; //just populate with default note
-	// }
-
 	song =  {Note{0,false,false},Note{1,false,false},Note{2,false,false},Note{3,false,false}};
-	
 
-	//start music loop playing:
-	// (note: position will be over-ridden in update())
-	// leg_tip_loop = Sound::loop_3D(*dusty_floor_sample, 1.0f, get_leg_tip_position(), 10.0f);
-	// leg_tip_loop.get()->stop();
 
 	low_c = Sound::loop(*low_c_sample, 1.0f);
 	low_c.get()->stop();
@@ -160,6 +142,10 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			down.downs += 1;
 			down.pressed = true;
 			return true;
+		} else if (evt.key.keysym.sym == SDLK_SPACE){
+			space.downs += 1;
+			space.pressed = true;
+			return true;
 		}
 	} else if (evt.type == SDL_KEYUP) {
 		if (evt.key.keysym.sym == SDLK_a) {
@@ -174,59 +160,21 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 		} else if (evt.key.keysym.sym == SDLK_s) {
 			down.pressed = false;
 			return true;
+		} else if (evt.key.keysym.sym == SDLK_SPACE){
+			space.pressed = false;
+			return true;
 		}
 	}
-	// } else if (evt.type == SDL_MOUSEBUTTONDOWN) {
-	// 	if (SDL_GetRelativeMouseMode() == SDL_FALSE) {
-	// 		SDL_SetRelativeMouseMode(SDL_TRUE);
-	// 		return true;
-	// 	}
-	// } else if (evt.type == SDL_MOUSEMOTION) {
-	// 	if (SDL_GetRelativeMouseMode() == SDL_TRUE) {
-	// 		glm::vec2 motion = glm::vec2(
-	// 			evt.motion.xrel / float(window_size.y),
-	// 			-evt.motion.yrel / float(window_size.y)
-	// 		);
-	// 		camera->transform->rotation = glm::normalize(
-	// 			camera->transform->rotation
-	// 			* glm::angleAxis(-motion.x * camera->fovy, glm::vec3(0.0f, 1.0f, 0.0f))
-	// 			* glm::angleAxis(motion.y * camera->fovy, glm::vec3(1.0f, 0.0f, 0.0f))
-	// 		);
-	// 		return true;
-	// 	}
-	// }
 
 	return false;
 }
 
 void PlayMode::update(float elapsed) {
 
-	// //slowly rotates through [0,1):
-	// wobble += elapsed / 10.0f;
-	// wobble -= std::floor(wobble);
-
-	// hip->rotation = hip_base_rotation * glm::angleAxis(
-	// 	glm::radians(5.0f * std::sin(wobble * 2.0f * float(M_PI))),
-	// 	glm::vec3(0.0f, 1.0f, 0.0f)
-	// );
-	// upper_leg->rotation = upper_leg_base_rotation * glm::angleAxis(
-	// 	glm::radians(7.0f * std::sin(wobble * 2.0f * 2.0f * float(M_PI))),
-	// 	glm::vec3(0.0f, 0.0f, 1.0f)
-	// );
-	// lower_leg->rotation = lower_leg_base_rotation * glm::angleAxis(
-	// 	glm::radians(10.0f * std::sin(wobble * 3.0f * 2.0f * float(M_PI))),
-	// 	glm::vec3(0.0f, 0.0f, 1.0f)
-	// );
-
-	// //move sound to follow leg tip position:
-	// low_c->set_position(get_leg_tip_position(), 1.0f / 60.0f);
-	// high_c->set_position(get_leg_tip_position(), 1.0f / 60.0f);
-	// mid_e->set_position(get_leg_tip_position(), 1.0f / 60.0f);
-	// mid_g->set_position(get_leg_tip_position(), 1.0f / 60.0f);
-
+	//slowly rotates through [0,1):
+	wobble += elapsed / 1.0f;
+	wobble -= std::floor(wobble);
 	
-
-	//move camera:
 	{
 		bool match = false;
 		bool wrong_sequence = false;
@@ -234,8 +182,12 @@ void PlayMode::update(float elapsed) {
 		//combine inputs into a move:
 		constexpr float PlayerSpeed = 30.0f;
 		glm::vec2 move = glm::vec2(0.0f);
-		uint8_t player_note = 4; //set to a none note
+		uint8_t player_note = 4; //set to a none note to init
 		if (left.downs ==1){
+			bunny->rotation = bunny_base_rotation * glm::angleAxis(
+				glm::radians(5.0f * std::sin(wobble * 2.0f * float(M_PI))),
+				glm::vec3(0.0f, 1.0f, 0.0f)
+			);
 			low_c.get()->stop();
 			mid_g.get()->stop();
 			high_c.get()->stop();
@@ -262,6 +214,10 @@ void PlayMode::update(float elapsed) {
 			
 		} 
 		if (right.downs==1){
+			bunny->rotation = bunny_base_rotation * glm::angleAxis(
+				glm::radians(5.0f * std::sin(wobble * 2.0f * float(M_PI))),
+				glm::vec3(0.0f, 1.0f, 0.0f)
+			);
 			low_c.get()->stop();
 			mid_e.get()->stop();
 			high_c.get()->stop();
@@ -289,6 +245,10 @@ void PlayMode::update(float elapsed) {
 			}
 		} 
 		if (down.downs==1){
+			bunny->rotation = bunny_base_rotation * glm::angleAxis(
+				glm::radians(5.0f * std::sin(wobble * 2.0f * float(M_PI))),
+				glm::vec3(0.0f, 1.0f, 0.0f)
+			);
 			mid_g.get()->stop();
 			mid_e.get()->stop();
 			high_c.get()->stop();
@@ -318,6 +278,10 @@ void PlayMode::update(float elapsed) {
 			}
 		} 
 		if (up.downs==1){
+			bunny->rotation = bunny_base_rotation * glm::angleAxis(
+				glm::radians(5.0f * std::sin(wobble * 2.0f * float(M_PI))),
+				glm::vec3(0.0f, 1.0f, 0.0f)
+			);
 			low_c.get()->stop();
 			mid_e.get()->stop();
 			mid_g.get()->stop();
@@ -343,8 +307,16 @@ void PlayMode::update(float elapsed) {
 
 				note_count++;
 			}
-		} //TODOFORME: replay on space
+		}
+		if (space.downs==1){
+			for (uint32_t x = 0; x < 4; ++x) {
+				song[x].done = false;
+				song[x].correct = false;
+				//reset the done and correct sequence flags so it can replay
+			}
+			playing = true;
 
+		}
 		
 		//check everything and also set if wrong
 
@@ -363,7 +335,7 @@ void PlayMode::update(float elapsed) {
 			score+=1;
 			for (uint32_t x = 0; x < 4; ++x) {
 				uint8_t rand_note = rand()%4;
-				song[x] = Note{rand_note,false,false}; //just populate with default note TODOFORME
+				song[x] = Note{rand_note,false,false}; 
 			}
 			all_done = false;
 			playing = true; //start again playing it
@@ -373,9 +345,14 @@ void PlayMode::update(float elapsed) {
 
 		//if playing the song:
 		if(playing){
+			//wobble carrot singing the song
+			carrot->rotation = carrot_base_rotation * glm::angleAxis(
+			glm::radians(5.0f * std::sin(wobble * 2.0f * float(M_PI))),
+			glm::vec3(0.0f, 1.0f, 0.0f)
+			);
 			//update note_elapsed
 			note_elapsed+=elapsed;
-			if(note_elapsed>1.0f){
+			if(note_elapsed>1.5f){
 				bool note_played = false;
 				for ( size_t i = 0; i < 4; i++){
 					if(!note_played){
@@ -424,6 +401,7 @@ void PlayMode::update(float elapsed) {
 	right.downs = 0;
 	up.downs = 0;
 	down.downs = 0;
+	space.downs = 0;
 }
 
 void PlayMode::draw(glm::uvec2 const &drawable_size) {
@@ -457,21 +435,25 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 			0.0f, 0.0f, 0.0f, 1.0f
 		));
 
-		constexpr float H = 0.09f;
-		lines.draw_text("Mouse motion rotates camera; WASD moves; escape ungrabs mouse %s",
+		std::string score_string = std::to_string(score); 
+
+		constexpr float H = 0.20f;
+		lines.draw_text(score_string,
 			glm::vec3(-aspect + 0.1f * H, -1.0 + 0.1f * H, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
-			glm::u8vec4(0x00, 0x00, 0x00, 0x00));
+			glm::u8vec4(0xf0, 0x0a, 0x75, 0x00));
 		float ofs = 2.0f / drawable_size.y;
-		lines.draw_text("Mouse motion rotates camera; WASD moves; escape ungrabs mouse",
+		lines.draw_text(score_string,
 			glm::vec3(-aspect + 0.1f * H + ofs, -1.0 + + 0.1f * H + ofs, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
-			glm::u8vec4(0xff, 0xff, 0xff, 0x00));
+			glm::u8vec4(0xf0, 0x0a, 0x75, 0x00));
+
+		
 	}
 	GL_ERRORS();
 }
 
-glm::vec3 PlayMode::get_leg_tip_position() {
-	//the vertex position here was read from the model in blender:
-	return lower_leg->make_local_to_world() * glm::vec4(-1.26137f, -11.861f, 0.0f, 1.0f);
-}
+// glm::vec3 PlayMode::get_leg_tip_position() {
+// 	//the vertex position here was read from the model in blender:
+// 	return lower_leg->make_local_to_world() * glm::vec4(-1.26137f, -11.861f, 0.0f, 1.0f);
+// }
